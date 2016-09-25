@@ -28,6 +28,7 @@ import org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoDataAutoConfiguration;
+import org.springframework.boot.autoconfigure.solr.SolrAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -43,6 +44,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.xd.dirt.cluster.ContainerAttributes;
+import org.springframework.xd.dirt.container.decryptor.DecryptorContext;
+import org.springframework.xd.dirt.container.decryptor.PropertiesDecryptor;
 import org.springframework.xd.dirt.server.ApplicationUtils;
 import org.springframework.xd.dirt.server.MessageBusClassLoaderFactory;
 import org.springframework.xd.dirt.server.ParentConfiguration;
@@ -63,7 +66,8 @@ import org.springframework.xd.dirt.util.XdProfiles;
  */
 @Configuration
 @EnableAutoConfiguration(exclude = { BatchAutoConfiguration.class, JmxAutoConfiguration.class,
-	AuditAutoConfiguration.class, MongoAutoConfiguration.class, MongoDataAutoConfiguration.class })
+		AuditAutoConfiguration.class, MongoAutoConfiguration.class, MongoDataAutoConfiguration.class,
+		SolrAutoConfiguration.class })
 public class ContainerServerApplication implements EnvironmentAware {
 
 	private static final Logger logger = LoggerFactory.getLogger(ContainerServerApplication.class);
@@ -90,15 +94,19 @@ public class ContainerServerApplication implements EnvironmentAware {
 
 			MessageBusClassLoaderFactory classLoaderFactory = new MessageBusClassLoaderFactory();
 
+			DecryptorContext decryptorContext = new DecryptorContext();
+
 			this.containerContext = new SpringApplicationBuilder(ContainerOptions.class, ParentConfiguration.class)
 					.logStartupInfo(false)
 					.profiles(XdProfiles.CONTAINER_PROFILE)
 					.listeners(bootstrapContext.commandLineListener())
 					.listeners(classLoaderFactory)
+					.listeners(decryptorContext.propertiesDecryptor())
 					.child(SharedServerContextConfiguration.class, ContainerOptions.class)
 					.resourceLoader(classLoaderFactory.getResolver())
 					.logStartupInfo(false)
 					.listeners(bootstrapContext.commandLineListener())
+					.listeners(decryptorContext.propertiesDecryptor())
 					.child(ContainerServerApplication.class)
 					.logStartupInfo(false)
 					.listeners(
@@ -106,6 +114,7 @@ public class ContainerServerApplication implements EnvironmentAware {
 									bootstrapContext.pluginContextInitializers()))
 					.child(ContainerConfiguration.class)
 					.listeners(bootstrapContext.commandLineListener())
+					.listeners(decryptorContext.propertiesDecryptor())
 					.initializers(new IdInitializer())
 					.showBanner(false)
 					.run(args);

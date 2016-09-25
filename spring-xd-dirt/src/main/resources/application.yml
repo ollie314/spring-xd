@@ -11,10 +11,11 @@ spring:
   redis:
    port: 6379
    host: localhost
-   pool.maxIdle: 8
-   pool.minIdle: 0
-   pool.maxActive: 8
-   pool.maxWait: -1
+   pool:
+     maxIdle: 8 # max idle connections in the pool
+     minIdle: 0 # min idle connections in the pool
+     maxActive: -1 # no limit to the number of active connections
+     maxWait: 30000 # time limit to get a connection - only applies if maxActive is finite
 
 # RabbitMQ properties
   rabbitmq:
@@ -26,9 +27,15 @@ spring:
    virtual_host: /
    useSSL: false
    sslProperties:
+   ssl:
+     keyStore:
+     keyStorePassphrase:
+     trustStore:
+     trustStorePassphrase:
+
 # HSQL database configuration
   datasource:
-    url: jdbc:hsqldb:hsql://${hsql.server.host:localhost}:${hsql.server.port:9101}/${hsql.server.dbname:xdjob}
+    url: jdbc:hsqldb:hsql://${hsql.server.host:localhost}:${hsql.server.port:9101}/${hsql.server.dbname:xdjob};sql.enforce_strict_size=true;hsqldb.tx=mvcc
     username: sa
     password:
     driverClassName: org.hsqldb.jdbc.JDBCDriver
@@ -109,6 +116,9 @@ xd:
       compressionLevel:            1
             # bus-level property, applies only when 'compress=true' for a stream module
             # See java.util.zip.Deflater; 1=BEST_SPEED, 9=BEST_COMPRESSION, ...
+      longStringLimit:             8192
+            # Headers longer than this will not be converted to String and will be a
+            # DataInputStream - such headers will NOT be properly converted back on output.
       default:
         ackMode:                   AUTO
             # Valid: AUTO (container acks), NONE (broker acks), MANUAL (consumer acks).
@@ -142,7 +152,7 @@ xd:
         txSize:                    1
     redis:
       headers:
-            # comman-delimited list of additional (string-valued) header names to transport
+            # comma-delimited list of additional header names to transport
       default:
             # default bus properties, if not specified at the module level
         backOffInitialInterval:    1000
@@ -154,6 +164,9 @@ xd:
       brokers:                                 localhost:9092
       zkAddress:                               localhost:2181
       mode:                                    embeddedHeaders
+      offsetManagement:                        kafkaTopic
+      headers:
+            # comma-delimited list of additional header names to transport
       socketBufferSize:                        2097152
       offsetStoreTopic:                        SpringXdOffsets
       offsetStoreSegmentSize:                  25000000
@@ -177,6 +190,9 @@ xd:
         maxWait:                   100
         fetchSize:                 1048576
         minPartitionCount:         1
+        durableSubscription:       false
+        syncProducer:              false
+        syncProducerTimeout:       5000
   security:
     authorization:
       rules:
@@ -310,7 +326,7 @@ security:
 
 
 # Profile specific documents below
---- 
+---
 spring:
   profiles: rabbit
 transport: rabbit

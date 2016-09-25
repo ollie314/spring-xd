@@ -12,6 +12,44 @@ def loadDirtJars = {
 	dirtJars
 }
 
+def customizePom = {
+	description project.description
+        name project.name
+	url linkHomepage
+	organization {
+		name 'Spring by Pivotal'
+		url 'https://spring.io'
+	}
+	licenses {
+		license {
+			name 'The Apache Software License, Version 2.0'
+			url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+			distribution 'repo'
+		}
+	}
+
+	scm {
+		url linkScmUrl
+		connection linkScmConnection
+		developerConnection linkScmDevConnection
+	}
+
+	developers {
+		xdDevelopers.each { dev ->
+			developer {
+				id dev.id
+				name dev.name
+				if (dev.email) {
+					email dev.email
+				}
+			}
+		}
+	}
+}
+
+// This is needed to generate elements that are also defined methods in MavenPublication
+customizePom.resolveStrategy = Closure.DELEGATE_FIRST
+
 task copyRedisInstall(type: Copy, dependsOn: ":redis:bundleRedis") {
 	from "$rootDir/redis/build"
 	into "$buildDir/dist/spring-xd/redis"
@@ -88,7 +126,7 @@ task copyHadoopLibs {}
 def hadoopDistros = [
 	'hadoop27',
 	'cdh5',
-	'hdp23',
+	'hdp22',
 	'phd21',
 	'phd30'
 ]
@@ -210,7 +248,7 @@ task distShellZip(type: Zip, dependsOn: [copyInstall], overwrite: true) {
         [
                 'hadoop27',
                 'cdh5',
-                'hdp23',
+                'hdp22',
                 'phd21',
                 'phd30'
         ].each { distro ->
@@ -218,6 +256,7 @@ task distShellZip(type: Zip, dependsOn: [copyInstall], overwrite: true) {
                             include "hadoop-auth-*.jar"
                             include "hadoop-common-*.jar"
                             include "hadoop-hdfs-*.jar"
+                            include "htrace-core-*"
                             include "hadoop-mapreduce-client-core-*.jar"
                             include "protobuf-java-*.jar"
                             into "${baseDir}/lib/$distro/"
@@ -363,6 +402,12 @@ artifactory {
 
 publishing {
 	publications {
+		mavenCustom(MavenPublication) {
+			pom.withXml {
+
+				asNode().version + customizePom
+			}
+		}
 		archives(MavenPublication) {
 			artifact distZip
 			artifact distYarnZip

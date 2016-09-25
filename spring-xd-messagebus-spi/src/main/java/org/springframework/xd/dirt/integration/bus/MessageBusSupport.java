@@ -51,6 +51,7 @@ import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.integration.channel.DirectChannel;
+import org.springframework.integration.codec.Codec;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.endpoint.EventDrivenConsumer;
 import org.springframework.messaging.Message;
@@ -68,8 +69,6 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.IdGenerator;
 import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
-import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
-import org.springframework.xd.dirt.integration.bus.serializer.SerializationException;
 
 /**
  * @author David Turanski
@@ -81,6 +80,8 @@ public abstract class MessageBusSupport
 
 	protected static final String P2P_NAMED_CHANNEL_TYPE_PREFIX = "queue:";
 
+	protected static final String TAP_TYPE_PREFIX = "tap:";
+
 	protected static final String PUBSUB_NAMED_CHANNEL_TYPE_PREFIX = "topic:";
 
 	protected static final String JOB_CHANNEL_TYPE_PREFIX = "job:";
@@ -91,7 +92,7 @@ public abstract class MessageBusSupport
 
 	private volatile AbstractApplicationContext applicationContext;
 
-	private volatile MultiTypeCodec<Object> codec;
+	private volatile Codec codec;
 
 	private final StringConvertingContentTypeResolver contentTypeResolver = new StringConvertingContentTypeResolver();
 
@@ -256,7 +257,7 @@ public abstract class MessageBusSupport
 		return this.applicationContext.getBeanFactory();
 	}
 
-	public void setCodec(MultiTypeCodec<Object> codec) {
+	public void setCodec(Codec codec) {
 		this.codec = codec;
 	}
 
@@ -584,7 +585,7 @@ public abstract class MessageBusSupport
 				if (originalPayload instanceof String) {
 					return ((String) originalPayload).getBytes("UTF-8");
 				}
-				this.codec.serialize(originalPayload, bos);
+				this.codec.encode(originalPayload, bos);
 				return bos.toByteArray();
 			}
 			catch (IOException e) {
@@ -643,7 +644,7 @@ public abstract class MessageBusSupport
 					targetType = ClassUtils.forName(className, null);
 					payloadTypeCache.put(className, targetType);
 				}
-				return codec.deserialize(bytes, targetType);
+				return codec.decode(bytes, targetType);
 			} catch (ClassNotFoundException e) {
 				throw new SerializationException("unable to deserialize [" + className + "]. Class not found.", e);//NOSONAR
 			} catch (IOException e) {
@@ -768,6 +769,7 @@ public abstract class MessageBusSupport
 	protected void validateProducerProperties(String name, Properties properties, Set<Object> supported) {
 		if (properties != null) {
 			validateProperties(name, properties, supported, "producer");
+			validatePartitioning(name, properties);
 		}
 	}
 
@@ -787,6 +789,27 @@ public abstract class MessageBusSupport
 					+ (errors == 1 ? "y: " : "ies: ")
 					+ builder.substring(0, builder.length() - 1)
 					+ " for " + name + ".");
+		}
+	}
+
+	private void validatePartitioning(String name, Properties properties) {
+		if (!isCapable(Capability.NATIVE_PARTITIONING)
+				&& (StringUtils.hasText(properties.getProperty(BusProperties.PARTITION_KEY_EXPRESSION))
+				|| StringUtils.hasText(properties.getProperty(BusProperties.PARTITION_KEY_EXTRACTOR_CLASS)))) {
+			String nextModuleCount = properties.getProperty(BusProperties.NEXT_MODULE_COUNT);
+			Assert.hasText(nextModuleCount,
+					String.format(getClass().getSimpleName() + " requires partitioned data to be sent to a module "
+							+ "having 'count' > 1 for '%s'", name));
+			try {
+				Assert.isTrue(Integer.parseInt(nextModuleCount) > 1,
+						String.format(getClass().getSimpleName() + " requires that module '%s' sends partitioned data to a"
+								+ " module having 'count' > 1", name));
+			}
+			catch (NumberFormatException e) {
+				throw new IllegalArgumentException(String.format("Property '%s' for " +
+								"module '%s' does not contain a valid integer, current value is '%s'",
+						BusProperties.NEXT_MODULE_COUNT, name, nextModuleCount));
+			}
 		}
 	}
 

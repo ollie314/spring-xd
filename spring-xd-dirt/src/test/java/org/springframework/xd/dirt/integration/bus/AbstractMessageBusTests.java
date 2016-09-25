@@ -16,35 +16,28 @@
 
 package org.springframework.xd.dirt.integration.bus;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
-
 import org.junit.After;
 import org.junit.Test;
-
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.http.MediaType;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.channel.interceptor.WireTap;
+import org.springframework.integration.codec.Codec;
+import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.xd.dirt.integration.bus.MessageBus.Capability;
 import org.springframework.xd.dirt.integration.bus.local.LocalMessageBus;
-import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
-import org.springframework.xd.dirt.integration.bus.serializer.kryo.AbstractKryoRegistrar;
-import org.springframework.xd.dirt.integration.bus.serializer.kryo.PojoCodec;
 import org.springframework.xd.tuple.serializer.kryo.TupleKryoRegistrar;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
+
+import static org.junit.Assert.*;
 
 /**
  * @author Gary Russell
@@ -84,7 +77,7 @@ public abstract class AbstractMessageBusTests {
 		QueueChannel moduleInputChannel = new QueueChannel();
 		messageBus.bindProducer("foo.0", moduleOutputChannel, null);
 		messageBus.bindConsumer("foo.0", moduleInputChannel, null);
-		Message<?> message = MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE, 
+		Message<?> message = MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE,
 				"foo/bar").build();
 		// Let the consumer actually bind to the producer before sending a msg
 		busBindUnbindLatency();
@@ -137,7 +130,7 @@ public abstract class AbstractMessageBusTests {
 		// Another new module is using tap as an input channel
 		String barTapName = messageBus.isCapable(Capability.DURABLE_PUBSUB) ? "bar.tap:baz.http" : "tap:baz.http";
 		messageBus.bindPubSubConsumer(barTapName, module3InputChannel, null);
-		Message<?> message = MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE, 
+		Message<?> message = MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE,
 				"foo/bar").build();
 		boolean success = false;
 		boolean retried = false;
@@ -166,7 +159,7 @@ public abstract class AbstractMessageBusTests {
 		}
 		// delete one tap stream is deleted
 		messageBus.unbindConsumer(barTapName, module3InputChannel);
-		Message<?> message2 = MessageBuilder.withPayload("bar").setHeader(MessageHeaders.CONTENT_TYPE, 
+		Message<?> message2 = MessageBuilder.withPayload("bar").setHeader(MessageHeaders.CONTENT_TYPE,
 				"foo/bar").build();
 		moduleOutputChannel.send(message2);
 
@@ -208,7 +201,7 @@ public abstract class AbstractMessageBusTests {
 		// Another new module is using tap as an input channel
 		String barTapName = messageBus.isCapable(Capability.DURABLE_PUBSUB) ? "bar.tap:baz.http" : "tap:baz.http";
 		messageBus.bindPubSubConsumer(barTapName, module3InputChannel, null);
-		Message<?> message = MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE, 
+		Message<?> message = MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE,
 				"foo/bar").build();
 		boolean success = false;
 		boolean retried = false;
@@ -237,7 +230,7 @@ public abstract class AbstractMessageBusTests {
 		}
 		// delete one tap stream is deleted
 		messageBus.unbindConsumer(barTapName, module3InputChannel);
-		Message<?> message2 = MessageBuilder.withPayload("bar").setHeader(MessageHeaders.CONTENT_TYPE, 
+		Message<?> message2 = MessageBuilder.withPayload("bar").setHeader(MessageHeaders.CONTENT_TYPE,
 				"foo/bar").build();
 		moduleOutputChannel.send(message2);
 
@@ -259,20 +252,37 @@ public abstract class AbstractMessageBusTests {
 
 	@Test
 	public void testBadDynamic() throws Exception {
-		Properties properties = new Properties();
-		properties.setProperty(BusProperties.PARTITION_KEY_EXPRESSION, "'foo'");
 		MessageBus messageBus = getMessageBus();
-		try {
-			messageBus.bindDynamicProducer("queue:foo", properties);
-			fail("Exception expected");
-		}
-		catch (MessageBusException mbe) {
-			assertEquals("Failed to bind dynamic channel 'queue:foo' with properties {partitionKeyExpression='foo'}",
-					mbe.getMessage());
-			if (messageBus instanceof AbstractTestMessageBus) {
-				messageBus = ((AbstractTestMessageBus) messageBus).getCoreMessageBus();
+		// Natively partitioned buses can specify a partitioning key on any output
+		if (!getMessageBus().isCapable(Capability.NATIVE_PARTITIONING)) {
+			Properties properties = new Properties();
+			properties.setProperty(BusProperties.PARTITION_KEY_EXPRESSION, "'foo'");
+			try {
+				messageBus.bindDynamicProducer("queue:foo", properties);
+				fail("Exception expected");
+			} catch (MessageBusException mbe) {
+				assertEquals("Failed to bind dynamic channel 'queue:foo' with properties {partitionKeyExpression='foo'}",
+						mbe.getMessage());
+				if (messageBus instanceof AbstractTestMessageBus) {
+					messageBus = ((AbstractTestMessageBus) messageBus).getCoreMessageBus();
+				}
+				assertFalse(((MessageBusSupport) messageBus).getApplicationContext().containsBean("queue:foo"));
 			}
-			assertFalse(((MessageBusSupport) messageBus).getApplicationContext().containsBean("queue:foo"));
+		}
+		else {
+			try {
+				Properties properties = new Properties();
+				properties.setProperty(BusProperties.MAX_ATTEMPTS, "'foo'");
+				messageBus.bindDynamicProducer("queue:foo", properties);
+				fail("Exception expected");
+			} catch (MessageBusException mbe) {
+				assertEquals("Failed to bind dynamic channel 'queue:foo' with properties {maxAttempts='foo'}",
+						mbe.getMessage());
+				if (messageBus instanceof AbstractTestMessageBus) {
+					messageBus = ((AbstractTestMessageBus) messageBus).getCoreMessageBus();
+				}
+				assertFalse(((MessageBusSupport) messageBus).getApplicationContext().containsBean("queue:foo"));
+			}
 		}
 	}
 
@@ -292,7 +302,7 @@ public abstract class AbstractMessageBusTests {
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
-	protected MultiTypeCodec<Object> getCodec() {
+	protected Codec getCodec() {
 		return new PojoCodec(new TupleKryoRegistrar());
 	}
 

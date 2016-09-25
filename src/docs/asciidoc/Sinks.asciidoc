@@ -145,11 +145,14 @@ The **$$router$$** $$sink$$ has the following options:
 
 $$expression$$:: $$a SpEL expression used to transform messages$$ *($$String$$, default: `payload.toString()`)*
 $$propertiesLocation$$:: $$the path of a properties file containing custom script variable bindings$$ *($$String$$, no default)*
+$$refreshDelay$$:: $$how often to check (in milliseconds) whether the script has changed; -1 for never$$ *($$long$$, default: `60000`)*
 $$script$$:: $$reference to a script used to process messages$$ *($$String$$, no default)*
 $$variables$$:: $$variable bindings as a comma delimited string of name-value pairs, e.g., 'foo=bar,baz=car'$$ *($$String$$, no default)*
 //$sink.router
 
-TIP: If the `script` option is set, the script is checked for updates every 60 seconds.
+TIP: If the `script` option is set, the script file's modified timestamp is checked for changes every 60 seconds by
+default; this can be changed with the `refreshDelay` deployment property: `--refreshDelay=30000` (every 30 seconds or
+30,000ms), `--refreshDelay=-1` to disable refresh.
 
 [[file-sink]]
 === File Sink (`file`)
@@ -404,7 +407,7 @@ updated.
 [source,text]
 ----
 # select * from xdsink2;
- col1  | col2 | col3 
+ col1  | col2 | col3
 -------+------+------
  DATA3 | DATA | DATA
  DATA2 | DATA | DATA
@@ -433,7 +436,7 @@ updated.
 [source,text]
 ----
 # select * from xdsink2;
- col1  | col2  | col3  
+ col1  | col2  | col3
 -------+-------+-------
  DATA3 | DATA  | DATA
  DATA2 | DATA  | DATA
@@ -534,7 +537,7 @@ $$updateColumns$$:: $$update columns with update$$ *($$String$$, no default)*
 //$sink.gpfdist
 
 [[cassandra]]
-=== Cassandra 
+=== Cassandra
 
 The Cassandra sink write into a Cassandra table.  Here is a simple example
 
@@ -805,10 +808,12 @@ The **$$hdfs$$** $$sink$$ has the following options:
 $$closeTimeout$$:: $$timeout in ms, regardless of activity, after which file will be automatically closed$$ *($$long$$, default: `0`)*
 $$codec$$:: $$compression codec alias name (gzip, snappy, bzip2, lzo, or slzo)$$ *($$String$$, default: ``)*
 $$directory$$:: $$where to output the files in the Hadoop FileSystem$$ *($$String$$, default: `/xd/<stream name>`)*
+$$enableSync$$:: $$whether writer will sync to datanode when flush is called, setting this to 'true' could impact throughput$$ *($$boolean$$, default: `false`)*
 $$fileExtension$$:: $$the base filename extension to use for the created files$$ *($$String$$, default: `txt`)*
 $$fileName$$:: $$the base filename to use for the created files$$ *($$String$$, default: `<stream name>`)*
 $$fileOpenAttempts$$:: $$maximum number of file open attempts to find a path$$ *($$int$$, default: `10`)*
 $$fileUuid$$:: $$whether file name should contain uuid$$ *($$boolean$$, default: `false`)*
+$$flushTimeout$$:: $$timeout in ms, regardless of activity, after which data written to file will be flushed$$ *($$long$$, default: `0`)*
 $$fsUri$$:: $$the URI to use to access the Hadoop FileSystem$$ *($$String$$, default: `${spring.hadoop.fsUri}`)*
 $$idleTimeout$$:: $$inactivity timeout in ms after which file will be automatically closed$$ *($$long$$, default: `0`)*
 $$inUsePrefix$$:: $$prefix for files currently being written$$ *($$String$$, default: ``)*
@@ -1009,6 +1014,8 @@ To create a stream using a `jdbc` sink relying on all defaults you would use a c
 This will insert the time messages into a 'payload' column in a table named 'mydata'. Since the default is using the XD batch metadata HSQLDB database we can connect to this database instance from an external tool. After we let the stream run for a little while, we can connect to the database and look at the data stored in the database.
 
 You can query the database with your favorite SQL tool using the following database URL: `jdbc:hsqldb:hsql://localhost:9101/xdjob` with `sa` as the user name and a blank password. You can also use the HSQL provided SQL Tool (download from link:http://hsqldb.org/[HSQLDB]) to run a quick query from the command line:
+
+NOTE: If you access any database other than HSQLDB or Postgres in a stream module then the JDBC driver jar for that database needs to be present in the `$XD_HOME/lib` directory.
 
 [source,bash]
 ----
@@ -1306,10 +1313,14 @@ $$addresses$$:: $$a comma separated list of 'host[:port]' addresses$$ *($$String
 $$converterClass$$:: $$the class name of the message converter$$ *($$String$$, default: `org.springframework.amqp.support.converter.SimpleMessageConverter`)*
 $$deliveryMode$$:: $$the delivery mode (PERSISTENT, NON_PERSISTENT)$$ *($$String$$, default: `PERSISTENT`)*
 $$exchange$$:: $$the Exchange on the RabbitMQ broker to which messages should be sent$$ *($$String$$, default: ``)*
+$$keyStore$$:: $$keyStore location (if not using SSL properties)$$ *($$String$$, default: `${spring.rabbitmq.ssl.keyStore}`)*
+$$keyStorePassphrase$$:: $$keyStore passphrase (if not using SSL properties)$$ *($$String$$, default: `${spring.rabbitmq.ssl.keyStorePassphrase}`)*
 $$mappedRequestHeaders$$:: $$request message header names to be propagated to/from the adpater/gateway$$ *($$String$$, default: `STANDARD_REQUEST_HEADERS`)*
 $$password$$:: $$the password to use to connect to the broker$$ *($$String$$, default: `${spring.rabbitmq.password}`)*
 $$routingKey$$:: $$the routing key to be passed with the message, as a SpEL expression$$ *($$String$$, default: `'<stream name>'`)*
 $$sslPropertiesLocation$$:: $$resource containing SSL properties$$ *($$String$$, default: `${spring.rabbitmq.sslProperties}`)*
+$$trustStore$$:: $$trustStore location (if not using SSL properties)$$ *($$String$$, default: `${spring.rabbitmq.ssl.trustStore}`)*
+$$trustStorePassphrase$$:: $$trustStore passphrase (if not using SSL properties)$$ *($$String$$, default: `${spring.rabbitmq.ssl.trustStorePassphrase}`)*
 $$useSSL$$:: $$true if SSL should be used for the connection$$ *($$String$$, default: `${spring.rabbitmq.useSSL}`)*
 $$username$$:: $$the username to use to connect to the broker$$ *($$String$$, default: `${spring.rabbitmq.username}`)*
 $$vhost$$:: $$the RabbitMQ virtual host to use$$ *($$String$$, default: `${spring.rabbitmq.virtual_host}`)*

@@ -34,6 +34,7 @@ import org.springframework.boot.autoconfigure.groovy.template.GroovyTemplateAuto
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoDataAutoConfiguration;
+import org.springframework.boot.autoconfigure.solr.SolrAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.embedded.EmbeddedServletContainerException;
 import org.springframework.context.ApplicationContext;
@@ -48,6 +49,8 @@ import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.event.SourceFilteringListener;
 import org.springframework.web.filter.HttpPutFormContentFilter;
 import org.springframework.xd.batch.XdBatchDatabaseInitializer;
+import org.springframework.xd.dirt.container.decryptor.DecryptorContext;
+import org.springframework.xd.dirt.container.decryptor.PropertiesDecryptor;
 import org.springframework.xd.dirt.rest.RestConfiguration;
 import org.springframework.xd.dirt.server.MessageBusClassLoaderFactory;
 import org.springframework.xd.dirt.server.ParentConfiguration;
@@ -65,7 +68,7 @@ import org.springframework.xd.dirt.web.WebConfiguration;
 @Configuration
 @EnableAutoConfiguration(exclude = {BatchAutoConfiguration.class, JmxAutoConfiguration.class,
 		AuditAutoConfiguration.class, GroovyTemplateAutoConfiguration.class, MongoAutoConfiguration.class,
-		MongoDataAutoConfiguration.class })
+		MongoDataAutoConfiguration.class, SolrAutoConfiguration.class})
 @ImportResource("classpath:" + ConfigLocations.XD_INTERNAL_CONFIG_ROOT + "admin-server.xml")
 @ComponentScan("org.springframework.xd.dirt.server.security")
 @Import({RestConfiguration.class, WebConfiguration.class, DeploymentConfiguration.class})
@@ -89,6 +92,8 @@ public class AdminServerApplication {
 		CommandLinePropertySourceOverridingListener<AdminOptions> commandLineListener = new CommandLinePropertySourceOverridingListener<AdminOptions>(
 				new AdminOptions());
 
+		DecryptorContext decryptorContext= new DecryptorContext();
+
 		MessageBusClassLoaderFactory classLoaderFactory = new MessageBusClassLoaderFactory();
 
 		try {
@@ -97,6 +102,7 @@ public class AdminServerApplication {
 					.profiles(XdProfiles.ADMIN_PROFILE)
 					.listeners(commandLineListener)
 					.listeners(classLoaderFactory)
+					.listeners(decryptorContext.propertiesDecryptor())
 					.initializers(new AdminPortAvailabilityInitializer())
 					.child(SharedServerContextConfiguration.class, AdminOptions.class)
 					.resourceLoader(classLoaderFactory.getResolver())
@@ -104,6 +110,7 @@ public class AdminServerApplication {
 					.listeners(commandLineListener)
 					.child(AdminServerApplication.class)
 					.listeners(commandLineListener)
+					.listeners(decryptorContext.propertiesDecryptor())
 					.initializers(new AdminIdInitializer())
 					.showBanner(false)
 					.run(args);

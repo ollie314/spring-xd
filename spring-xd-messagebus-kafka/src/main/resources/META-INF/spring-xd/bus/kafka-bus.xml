@@ -16,14 +16,17 @@
 		<constructor-arg value="${xd.messagebus.kafka.brokers}"/>
 		<constructor-arg value="${xd.messagebus.kafka.zkAddress}"/>
 		<constructor-arg ref="codec"/>
-		<constructor-arg value="#{new String[0]}"/>
+		<constructor-arg value="${xd.messagebus.kafka.headers:}" />
 
 		<property name="mode" value="${xd.messagebus.kafka.mode}"/>
+		<property name="offsetManagement" value="${xd.messagebus.kafka.offsetManagement}"/>
 
 		<!-- Producer properties -->
 		<property name="defaultBatchSize" value="${xd.messagebus.kafka.default.batchSize}"/>
 		<property name="defaultBatchTimeout" value="${xd.messagebus.kafka.default.batchTimeout}"/>
 		<property name="defaultRequiredAcks" value="${xd.messagebus.kafka.default.requiredAcks}"/>
+		<property name="defaultSyncProducer" value="${xd.messagebus.kafka.default.syncProducer}"/>
+		<property name="defaultSyncProducerTimeout" value="${xd.messagebus.kafka.default.syncProducerTimeout}"/>
 
 		<property name="defaultReplicationFactor" value="${xd.messagebus.kafka.default.replicationFactor}"/>
 		<property name="defaultConcurrency" value="${xd.messagebus.kafka.default.concurrency}"/>
@@ -33,6 +36,7 @@
 		<property name="defaultFetchSize" value="${xd.messagebus.kafka.default.fetchSize}"/>
 		<property name="defaultMinPartitionCount" value="${xd.messagebus.kafka.default.minPartitionCount}"/>
 		<property name="defaultQueueSize" value="${xd.messagebus.kafka.default.queueSize}"/>
+		<property name="defaultMaxWait" value="${xd.messagebus.kafka.default.maxWait}"/>
 		<!-- Offset Manager Properties-->
 		<property name="offsetStoreTopic" value="${xd.messagebus.kafka.offsetStoreTopic}"/>
 		<property name="offsetStoreSegmentSize" value="${xd.messagebus.kafka.offsetStoreSegmentSize}"/>

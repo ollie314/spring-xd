@@ -25,6 +25,9 @@
 #      compressionLevel:            1
             # bus-level property, applies only when 'compress=true' for a stream module
             # See java.util.zip.Deflater; 1=BEST_SPEED, 9=BEST_COMPRESSION, ...
+#      longStringLimit:             8192
+#            # Headers longer than this will not be converted to String and will be a
+#            # DataInputStream - such headers will NOT be properly converted back on output.
 #      default:
 #        ackMode:                   AUTO
             # Valid: AUTO (container acks), NONE (broker acks), MANUAL (consumer acks).
@@ -59,7 +62,7 @@
 
 #    redis:
 #      headers:
-            # comman-delimited list of additional (string-valued) header names to transport
+            # comma-delimited list of additional header names to transport
 #      default:
             # default bus properties, if not specified at the module level
 #        backOffInitialInterval:    1000
@@ -71,6 +74,9 @@
 #      brokers:                                 localhost:9092
 #      zkAddress:                               localhost:2181
 #      mode:                                    embeddedHeaders
+#      offsetManagement:                        kafkaTopic
+#      headers:
+            # comma-delimited list of additional header names to transport
 #      socketBufferSize:                        2097152
 #      offsetStoreTopic:                        SpringXdOffsets
 #      offsetStoreSegmentSize:                  25000000
@@ -93,12 +99,15 @@
 #        maxWait:                   100
 #        fetchSize:                 1048576
 #        minPartitionCount:         1
+#        durableSubscription:       false
+#        syncProducer:              false
+#        syncProducerTimeout:       5000
 
 #Disable batch database initialization
 #spring:
 #  batch:
 # Configure other Spring Batch repository values.  Most are typically not needed
-#    isolationLevel: ISOLATION_SERIALIZABLE
+#    isolationLevel: ISOLATION_READ_COMMITTED
 #    clobType:
 #    dbType:
 #    maxVarcharLength: 2500
@@ -129,7 +138,7 @@ xd:
 #Change database username and password
 #spring:
 #  datasource:
-#    url: jdbc:hsqldb:hsql://${hsql.server.host:localhost}:${hsql.server.port:9101}/${hsql.server.dbname:xdjob}
+#    url: jdbc:hsqldb:hsql://${hsql.server.host:localhost}:${hsql.server.port:9101}/${hsql.server.dbname:xdjob};sql.enforce_strict_size=true;hsqldb.tx=mvcc
 #    username: sa
 #    password:
 #    driverClassName: org.hsqldb.jdbc.JDBCDriver
@@ -264,6 +273,11 @@ endpoints:
 #  redis:
 #   port: 6379
 #   host: 127.0.0.1
+#   pool:
+#     maxIdle: 8 # max idle connections in the pool
+#     minIdle: 0 # min idle connections in the pool
+#     maxActive: -1 # no limit to the number of active connections
+#     maxWait: 30000 # time limit to get a connection - only applies if maxActive is finite
 #   sentinel:
 #     master: mymaster
 #     nodes: 127.0.0.1:26379,127.0.0.1:26380,127.0.0.1:26381
@@ -273,7 +287,11 @@ endpoints:
 #  port: 9393
 
 ---
-# RabbitMQ properties
+#  Rabbit MQ Properties
+#
+#  NOTE: sslProperties is mutually exclusive with keyStore, keyStorePassphrase, trustStore, trustStorePassphrase.
+#  if you set inline properties, values in the properties file location given by 'sslProperties' will be ignored.
+#
 #spring:
 #  rabbitmq:
 #   addresses: localhost:5672
@@ -284,6 +302,11 @@ endpoints:
 #   virtual_host: /
 #   useSSL: false
 #   sslProperties:
+#   ssl:
+#     keyStore:
+#     keyStorePassphrase:
+#     trustStore:
+#     trustStorePassphrase:
 
 
 ---

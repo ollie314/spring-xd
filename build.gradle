@@ -101,8 +101,6 @@ ext {
 			'spring-xd-extension-kafka',
 			'spring-xd-extension-cassandra',
 			'spring-xd-messagebus-spi',
-			'spring-xd-spi-common',
-			'spring-xd-codec'
 	].collect { p -> project(p) } + messagebusProjects
 }
 
@@ -124,7 +122,7 @@ allprojects {
 }
 
 ext {
-	xdAdminUIVersion = '1.3.0.M1'
+	xdAdminUIVersion = '1.3.1.RELEASE'
 	// Not in IO
 	activemqVersion = '5.6.0'
 	apacheFtpServerVersion = '1.0.6'
@@ -142,8 +140,8 @@ ext {
 	splunkVersion = '1.3.0'
 	springBatchAdminMgrVersion = '1.3.0.RELEASE'
 	springIntegrationSplunkVersion = '1.1.0.RELEASE'
-	springIntegrationKafkaVersion = '1.2.1.RELEASE'
-	kafkaVersion = '0.8.2.1'
+	springIntegrationKafkaVersion = '1.3.0.RELEASE'
+	kafkaVersion = '0.8.2.2'
 	springShellVersion = '1.1.0.RELEASE'
 	zookeeperVersion = '3.4.6'
 	sparkVersion = '1.3.1'
@@ -160,7 +158,7 @@ ext {
 	oldGuavaVersion = '15.0'  // This is only used by spring-xd-integration-test, IO uses version 17.0
 	guavaVersion = '16.0.1'
 
-	springDataHadoopBase = '2.3.0.M3'
+	springDataHadoopBase = '2.2.1.RELEASE'
 
 //	//Reactor 1.1 is used in spring-xd-extension-batch transitively though spring integration
 //	reactor11xVersion = '1.1.5.RELEASE'
@@ -484,6 +482,7 @@ project('spring-xd-dirt') {
 		}
 		compile "commons-lang:commons-lang:2.4"
 		compile "args4j:args4j:$args4jVersion"
+		compile "com.esotericsoftware:kryo-shaded"
 
 		compile "org.springframework.batch:spring-batch-core"
 		//Required for a classloading issue. See https://github.com/spring-projects/spring-xd/pull/1116
@@ -556,7 +555,14 @@ project('spring-xd-dirt') {
 		}
 
 		// The following is needed by cassandra module
-		runtime "org.springframework.integration:spring-integration-cassandra:$springIntegrationCassandraVersion"
+		runtime("org.springframework.integration:spring-integration-cassandra:$springIntegrationCassandraVersion") {
+			exclude group: "com.google.guava", module: "guava"
+		}
+
+		// Use Jetty (works better on YARN)
+		runtime 'org.eclipse.jetty:jetty-server:8.1.14.v20131031'
+		runtime 'org.eclipse.jetty:jetty-webapp:8.1.14.v20131031'
+		runtime 'org.eclipse.jetty:jetty-plus:8.1.14.v20131031'
 
 		// ************* Test
 		testCompile project(":spring-xd-test")
@@ -687,6 +693,10 @@ project('spring-xd-hadoop') {
 		configurations.compile.exclude(group: 'org.apache.httpcomponents', module: 'httpcore')
 		configurations.compile.exclude(group: 'com.sun.jersey', module: 'jersey-client')
 		configurations.compile.exclude(group: 'org.fusesource.leveldbjni', module: 'leveldbjni-all')
+		configurations.compile.exclude(group: 'org.apache.curator', module: 'curator-framework')
+		configurations.compile.exclude(group: 'org.apache.curator', module: 'curator-recipes')
+		configurations.compile.exclude(group: 'org.apache.curator', module: 'curator-client')
+		configurations.compile.exclude(group: 'org.apache.htrace', module: 'htrace-core')
 
 		compile("org.springframework.data:spring-data-hadoop-store") { exclude group: 'org.apache.hadoop' }
 		testRuntime "org.xerial.snappy:snappy-java"
@@ -712,7 +722,6 @@ project('spring-xd-yarn:spring-xd-yarn-client') {
 		compile "org.springframework:spring-tx"
 		compile "org.springframework.batch:spring-batch-core"
 		compile("org.springframework.data:spring-yarn-boot-cli") {
-			exclude group: 'javax.servlet', module: 'servlet-api'
 			exclude group: 'javax.servlet.jsp', module: 'jsp-api'
 			exclude group: 'tomcat', module: 'jasper-runtime'
 			exclude group: 'tomcat', module: 'jasper-compiler'
@@ -902,10 +911,14 @@ project('spring-xd-spark-streaming') {
 	dependencies {
 		compile("org.apache.spark:spark-streaming_$sparkScalaVersion:$sparkVersion") {
 			exclude group: 'hsqldb'
+			exclude module: 'htrace-core'
 			exclude group: 'com.esotericsoftware.kryo', module: 'kryo'
 		}
 		compile "org.springframework.integration:spring-integration-core"
 		compile project(":spring-xd-module-spi")
+		configurations.compile.exclude(group: 'org.apache.curator', module: 'curator-framework')
+		configurations.compile.exclude(group: 'org.apache.curator', module: 'curator-recipes')
+		configurations.compile.exclude(group: 'org.apache.curator', module: 'curator-client')
 	}
 }
 
@@ -942,12 +955,13 @@ project('spring-xd-spark-streaming-tests') {
 project('spring-xd-tuple') {
 	description = 'Spring XD Tuple'
 	dependencies {
-		compile project(':spring-xd-codec')
 		compile "com.fasterxml.jackson.core:jackson-databind"
 		compile "org.springframework:spring-context"
 		compile "org.springframework.integration:spring-integration-core"
 		compile "org.springframework.batch:spring-batch-infrastructure"
 		compile "org.springframework:spring-jdbc"
+		compile "com.esotericsoftware:kryo-shaded"
+		compile "org.slf4j:slf4j-api"
 	}
 }
 
@@ -982,32 +996,17 @@ project('spring-xd-rest-domain') {
 	}
 }
 
-project('spring-xd-codec') {
-	description = 'Spring XD Codecs used for serialization'
-	dependencies {
-		compile project(':spring-xd-spi-common')
-		compile "org.springframework:spring-core"
-		compile "org.springframework.integration:spring-integration-core"
-		compile "com.esotericsoftware:kryo-shaded"
-		compile "org.slf4j:slf4j-api"
-	}
-}
-
-project('spring-xd-spi-common') {
-	description = 'Spring XD SPI shared code'
-}
-
 project('spring-xd-messagebus-spi') {
 	description = 'Spring XD MessageBus Service Provider Interface'
 	dependencies {
-		compile project(':spring-xd-spi-common')
-		compile project(':spring-xd-codec')
 		compile "org.springframework:spring-messaging"
 		compile "org.springframework:spring-web"
 		compile "org.springframework.retry:spring-retry"
 		compile "org.springframework.integration:spring-integration-core"
 		compile "com.fasterxml.jackson.core:jackson-databind"
 		compile "org.apache.httpcomponents:httpclient"
+		compile "com.esotericsoftware:kryo-shaded"
+		compile "org.slf4j:slf4j-api"
 	}
 }
 
@@ -1166,6 +1165,7 @@ project('spring-xd-shell') {
 			exclude group: 'net.java.dev.jets3t', module: 'jets3t'
 			exclude group: 'com.jcraft', module: 'jsch'
 			exclude group: 'junit', module: 'junit'
+			exclude group: 'org.apache.htrace', module: 'htrace-core'
 			//TODO: Not sure this is doing anything
 			exclude group: 'hsqldb'
 			exclude group: 'jline', module: 'jline'
@@ -1255,6 +1255,7 @@ project('spring-xd-test-fixtures') {
 		compile "org.apache.activemq:activemq-client"
 		compile "org.apache.ftpserver:ftpserver-core:$ftpServerVersion"
 		compile "org.springframework:spring-web"
+		compile "com.esotericsoftware:kryo-shaded"
 		compile("org.springframework.data:spring-data-mongodb") {
 			exclude group: 'org.slf4j', module: 'jcl-over-slf4j'
 			exclude group: 'org.slf4j', module: 'slf4j-log4j12'

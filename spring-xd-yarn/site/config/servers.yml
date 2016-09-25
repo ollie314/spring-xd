@@ -58,14 +58,14 @@ spring:
 #      mapreduce.application.framework.path: '/phd/apps/3.0.1.0-1/mapreduce/mapreduce.tar.gz#mr-framework'
 #      mapreduce.application.classpath: '$PWD/mr-framework/hadoop/share/hadoop/mapreduce/*:$PWD/mr-framework/hadoop/share/hadoop/mapreduce/lib/*:$PWD/mr-framework/hadoop/share/hadoop/common/*:$PWD/mr-framework/hadoop/share/hadoop/common/lib/*:$PWD/mr-framework/hadoop/share/hadoop/yarn/*:$PWD/mr-framework/hadoop/share/hadoop/yarn/lib/*:$PWD/mr-framework/hadoop/share/hadoop/hdfs/*:$PWD/mr-framework/hadoop/share/hadoop/hdfs/lib/*:/usr/phd/3.0.1.0-1/hadoop/lib/hadoop-lzo-0.6.0.3.0.1.0-1.jar:/etc/hadoop/conf/secure'
 
-# Hortonworks HDP 2.3.0.0 (hdp23):
+# Hortonworks HDP 2.2.8.0 (hdp22):
 #spring:
 #  yarn:
 #    siteYarnAppClasspath: "/etc/hadoop/conf,/usr/hdp/current/hadoop-client/*,/usr/hdp/current/hadoop-client/lib/*,/usr/hdp/current/hadoop-hdfs-client/*,/usr/hdp/current/hadoop-hdfs-client/lib/*,/usr/hdp/current/hadoop-yarn-client/*,/usr/hdp/current/hadoop-yarn-client/lib/*"
 #    siteMapreduceAppClasspath: "/usr/hdp/current/hadoop-mapreduce-client/*,/usr/hdp/current/hadoop-mapreduce-client/lib/*"
 #    config:
-#      mapreduce.application.framework.path: '/hdp/apps/2.3.0.0-2557/mapreduce/mapreduce.tar.gz#mr-framework'
-#      mapreduce.application.classpath: '$PWD/mr-framework/hadoop/share/hadoop/mapreduce/*:$PWD/mr-framework/hadoop/share/hadoop/mapreduce/lib/*:$PWD/mr-framework/hadoop/share/hadoop/common/*:$PWD/mr-framework/hadoop/share/hadoop/common/lib/*:$PWD/mr-framework/hadoop/share/hadoop/yarn/*:$PWD/mr-framework/hadoop/share/hadoop/yarn/lib/*:$PWD/mr-framework/hadoop/share/hadoop/hdfs/*:$PWD/mr-framework/hadoop/share/hadoop/hdfs/lib/*:/usr/hdp/2.3.0.0-2557/hadoop/lib/hadoop-lzo-0.6.0.2.3.0.0-2557.jar:/etc/hadoop/conf/secure'
+#      mapreduce.application.framework.path: '/hdp/apps/2.2.8.0-3150/mapreduce/mapreduce.tar.gz#mr-framework'
+#      mapreduce.application.classpath: '$PWD/mr-framework/hadoop/share/hadoop/mapreduce/*:$PWD/mr-framework/hadoop/share/hadoop/mapreduce/lib/*:$PWD/mr-framework/hadoop/share/hadoop/common/*:$PWD/mr-framework/hadoop/share/hadoop/common/lib/*:$PWD/mr-framework/hadoop/share/hadoop/yarn/*:$PWD/mr-framework/hadoop/share/hadoop/yarn/lib/*:$PWD/mr-framework/hadoop/share/hadoop/hdfs/*:$PWD/mr-framework/hadoop/share/hadoop/hdfs/lib/*:/usr/hdp/2.2.8.0-3150/hadoop/lib/hadoop-lzo-0.6.0.2.2.8.0-3150.jar:/etc/hadoop/conf/secure'
 
 # Cloudera CDH5 (cdh5):
 #spring:
@@ -86,10 +86,10 @@ spring:
 #    config:
 #      mapreduce.application.framework.path: '/phd/apps/3.0.1.0-1/mapreduce/mapreduce.tar.gz#mr-framework'
 #      mapreduce.application.classpath: '$PWD/mr-framework/hadoop/share/hadoop/mapreduce/*:$PWD/mr-framework/hadoop/share/hadoop/mapreduce/lib/*:$PWD/mr-framework/hadoop/share/hadoop/common/*:$PWD/mr-framework/hadoop/share/hadoop/common/lib/*:$PWD/mr-framework/hadoop/share/hadoop/yarn/*:$PWD/mr-framework/hadoop/share/hadoop/yarn/lib/*:$PWD/mr-framework/hadoop/share/hadoop/hdfs/*:$PWD/mr-framework/hadoop/share/hadoop/hdfs/lib/*:/usr/phd/3.0.1.0-1/hadoop/lib/hadoop-lzo-0.6.0.3.0.1.0-1.jar:/etc/hadoop/conf/secure'
-## For hdp23 only (values for version 2.3.0.0, also change resourceManagerPort above to 8050)
+## For hdp22 only (values for version 2.2.8.0, also change resourceManagerPort above to 8050)
 #    config:
-#      mapreduce.application.framework.path: '/hdp/apps/2.3.0.0-249/mapreduce/mapreduce.tar.gz#mr-framework'
-#      mapreduce.application.classpath: '$PWD/mr-framework/hadoop/share/hadoop/mapreduce/*:$PWD/mr-framework/hadoop/share/hadoop/mapreduce/lib/*:$PWD/mr-framework/hadoop/share/hadoop/common/*:$PWD/mr-framework/hadoop/share/hadoop/common/lib/*:$PWD/mr-framework/hadoop/share/hadoop/yarn/*:$PWD/mr-framework/hadoop/share/hadoop/yarn/lib/*:$PWD/mr-framework/hadoop/share/hadoop/hdfs/*:$PWD/mr-framework/hadoop/share/hadoop/hdfs/lib/*:/usr/hdp/2.3.0.0-249/hadoop/lib/hadoop-lzo-0.6.0.2.3.0.0-249.jar:/etc/hadoop/conf/secure'
+#      mapreduce.application.framework.path: '/hdp/apps/2.2.8.0-3150/mapreduce/mapreduce.tar.gz#mr-framework'
+#      mapreduce.application.classpath: '$PWD/mr-framework/hadoop/share/hadoop/mapreduce/*:$PWD/mr-framework/hadoop/share/hadoop/mapreduce/lib/*:$PWD/mr-framework/hadoop/share/hadoop/common/*:$PWD/mr-framework/hadoop/share/hadoop/common/lib/*:$PWD/mr-framework/hadoop/share/hadoop/yarn/*:$PWD/mr-framework/hadoop/share/hadoop/yarn/lib/*:$PWD/mr-framework/hadoop/share/hadoop/hdfs/*:$PWD/mr-framework/hadoop/share/hadoop/hdfs/lib/*:/usr/hdp/2.2.8.0-3150/hadoop/lib/hadoop-lzo-0.6.0.2.2.8.0-3150.jar:/etc/hadoop/conf/secure'
 
 ---
 # Zookeeper properties
@@ -166,7 +166,7 @@ xd:
 
 #    redis:
 #      headers:
-            # comman-delimited list of additional (string-valued) header names to transport
+            # comma-delimited list of additional header names to transport
 #      default:
             # default bus properties, if not specified at the module level
 #        backOffInitialInterval:    1000
@@ -179,6 +179,9 @@ xd:
 #      brokers:                                 localhost:9092
 #      zkAddress:                               localhost:2181
 #      mode:                                    embeddedHeaders
+#      offsetManagement:                        kafkaTopic
+#      headers:
+            # comma-delimited list of additional header names to transport
 #      socketBufferSize:                        2097152
 #      offsetStoreTopic:                        SpringXdOffsets
 #      offsetStoreSegmentSize:                  25000000
@@ -201,13 +204,14 @@ xd:
 #        maxWait:                   100
 #        fetchSize:                 1048576
 #        minPartitionCount:         1
+#        durableSubscription:       false
 
 
 #Disable batch database initialization
 #spring:
 #  batch:
 # Configure other Spring Batch repository values.  Most are typically not needed
-#    isolationLevel: ISOLATION_SERIALIZABLE
+#    isolationLevel: ISOLATION_READ_COMMITTED
 #    clobType:
 #    dbType:
 #    maxVarcharLength: 2500

@@ -19,6 +19,14 @@ package org.springframework.xd.test.kafka;
 
 import java.util.Properties;
 
+import org.I0Itec.zkclient.ZkClient;
+import org.I0Itec.zkclient.exception.ZkInterruptedException;
+import org.junit.Rule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.springframework.xd.test.AbstractExternalResourceTestSupport;
+
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;
 import kafka.utils.SystemTime$;
@@ -27,19 +35,13 @@ import kafka.utils.TestZKUtils;
 import kafka.utils.Utils;
 import kafka.utils.ZKStringSerializer$;
 import kafka.utils.ZkUtils;
-import org.I0Itec.zkclient.ZkClient;
-import org.I0Itec.zkclient.exception.ZkInterruptedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.junit.Rule;
-
-import org.springframework.xd.test.AbstractExternalResourceTestSupport;
 
 /**
  * JUnit {@link Rule} that starts an embedded Kafka server (with an associated Zookeeper)
  *
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
+ * @author Gary Russell
  * @since 1.1
  */
 public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String> {
@@ -63,7 +65,8 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 	private Properties brokerConfig = TestUtils.createBrokerConfig(0, TestUtils.choosePort(), false);
 
 	static {
-		embedded = "true".equals(System.getProperty(XD_KAFKA_TEST_EMBEDDED));
+		embedded = "true".equals(System.getProperty(XD_KAFKA_TEST_EMBEDDED))
+				|| "true".equals(System.getenv(XD_KAFKA_TEST_EMBEDDED));
 		log.info(String.format("Testing with %s Kafka broker", embedded ? "embedded" : "external"));
 	}
 
@@ -121,7 +124,7 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 			}
 		}
 		else {
-			this.zkClient = new ZkClient(DEFAULT_ZOOKEEPER_CONNECT, 5000, 5000, ZKStringSerializer$.MODULE$);
+			this.zkClient = new ZkClient(DEFAULT_ZOOKEEPER_CONNECT, 10000, 10000, ZKStringSerializer$.MODULE$);
 			if (ZkUtils.getAllBrokersInCluster(zkClient).size() == 0) {
 				throw new RuntimeException("Kafka server not available");
 			}
